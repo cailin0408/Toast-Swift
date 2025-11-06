@@ -77,7 +77,7 @@ extension ViewController {
         if section == 0 {
             return 2
         } else {
-            return 11
+            return 17
         }
     }
     
@@ -149,6 +149,12 @@ extension ViewController {
             case 8: cell.textLabel?.text = showingActivity ? "Hide toast activity" : "Show toast activity"
             case 9: cell.textLabel?.text = "Hide toast"
             case 10: cell.textLabel?.text = "Hide all toasts"
+            case 11: cell.textLabel?.text = "Make stackable toast (疊加)"
+            case 12: cell.textLabel?.text = "Make 3 stackable toasts (連續疊加)"
+            case 13: cell.textLabel?.text = "Hide all stackable toasts"
+            case 14: cell.textLabel?.text = "Stackable toast with button (帶按鈕)"  // 新增
+            case 15: cell.textLabel?.text = "3 button toasts with actions (按鈕動作)"  // 新增
+            case 16: cell.textLabel?.text = "Mix: text + button toasts (混合疊加)"  // 新增
             default: cell.textLabel?.text = nil
             }
             
@@ -219,6 +225,92 @@ extension ViewController {
         case 10:
             // Hide all toasts
             self.navigationController?.view.hideAllToasts()
+        case 11:
+            // Make stackable toast (單個疊加)
+            self.navigationController?.view.makeStackableToast("Stackable ToastStackable ToastStackable ToastStackable ToastStackable ToastStackable ToastStackable ToastStackable Toast", duration: 3.0, position: .bottom)
+        case 12:
+            // Make 3 stackable toasts (連續疊加)
+            self.navigationController?.view.makeStackableToast("Toast 1", duration: 3.0, position: .bottom)
+            self.navigationController?.view.makeStackableToast("Toast 2", duration: 3.0, position: .bottom)
+            self.navigationController?.view.makeStackableToast("Toast 3", duration: 3.0, position: .bottom)
+        case 13:
+            // Hide all stackable toasts
+            self.navigationController?.view.hideAllStackableToasts()
+            
+        // ===== 新增的測試案例 =====
+        case 14:
+            // 單個帶按鈕的 stackable toast
+            self.navigationController?.view.makeStackableToastWithButton(
+                "這是一段範例文字，用來顯示提示訊息的內容長度與排版這是一段範例文字，用來顯示提示訊息的內容長度與排版",
+                buttonTitle: "確認",
+                duration: 5.0,
+                position: .bottom
+            ) {
+                // 可以在這裡顯示另一個 toast 來確認動作
+                self.navigationController?.view.makeToast("按鈕已點擊", duration: 1.5, position: .center)
+            }
+            
+        case 15:
+            // 連續顯示 3 個帶不同按鈕和動作的 toast
+            self.navigationController?.view.makeStackableToastWithButton(
+                "下載完成",
+                buttonTitle: "查看",
+                duration: 4.0,
+                position: .bottom
+            ) {
+                self.navigationController?.view.makeToast("開啟檔案中...", duration: 1.0, position: .center)
+            }
+            
+            self.navigationController?.view.makeStackableToastWithButton(
+                "新訊息通知",
+                buttonTitle: "回覆",
+                duration: 4.0,
+                position: .bottom
+            ) {
+                self.navigationController?.view.makeToast("開啟訊息中...", duration: 1.0, position: .center)
+            }
+            
+            self.navigationController?.view.makeStackableToastWithButton(
+                "系統更新可用",
+                buttonTitle: "更新",
+                duration: 4.0,
+                position: .bottom
+            ) {
+                self.navigationController?.view.makeToast("準備更新...", duration: 1.0, position: .center)
+            }
+            
+        case 16:
+            // 混合測試：一般 toast 和 按鈕 toast 疊加
+            self.navigationController?.view.makeStackableToast(
+                "這是普通的疊加訊息",
+                duration: 4.0,
+                position: .bottom
+            )
+            
+            self.navigationController?.view.makeStackableToastWithButton(
+                "需要確認的操作",
+                buttonTitle: "確認",
+                duration: 4.0,
+                position: .bottom
+            ) {
+                self.navigationController?.view.makeToast("已確認", duration: 1.0, position: .center)
+            }
+            
+            self.navigationController?.view.makeStackableToast(
+                "另一個普通訊息",
+                duration: 4.0,
+                position: .bottom
+            )
+            
+            self.navigationController?.view.makeStackableToastWithButton(
+                "刪除此項目？",
+                buttonTitle: "刪除",
+                duration: 4.0,
+                position: .bottom
+            ) {
+                self.navigationController?.view.makeToast("已刪除", duration: 1.0, position: .center)
+            }
+            
         default:
             break
         }

@@ -28,7 +28,7 @@ import ObjectiveC
 
 /**
  Toast is a Swift extension that adds toast notifications to the `UIView` object class.
- It is intended to be simple, lightweight, and easy to use. Most toast notifications 
+ It is intended to be simple, lightweight, and easy to use. Most toast notifications
  can be triggered with a single line of code.
  
  The `makeToast` methods create a new view and then display it as toast.
@@ -104,7 +104,7 @@ public extension UIView {
      @param image The image
      @param style The style. The shared style will be used when nil
      @param completion The completion closure, executed after the toast view disappears.
-            didTap will be `true` if the toast view was dismissed from a tap.
+     didTap will be `true` if the toast view was dismissed from a tap.
      */
     func makeToast(_ message: String?, duration: TimeInterval = ToastManager.shared.duration, position: ToastPosition = ToastManager.shared.position, title: String? = nil, image: UIImage? = nil, style: ToastStyle = ToastManager.shared.style, completion: ((_ didTap: Bool) -> Void)? = nil) {
         do {
@@ -125,7 +125,7 @@ public extension UIView {
      @param image The image
      @param style The style. The shared style will be used when nil
      @param completion The completion closure, executed after the toast view disappears.
-            didTap will be `true` if the toast view was dismissed from a tap.
+     didTap will be `true` if the toast view was dismissed from a tap.
      */
     func makeToast(_ message: String?, duration: TimeInterval = ToastManager.shared.duration, point: CGPoint, title: String?, image: UIImage?, style: ToastStyle = ToastManager.shared.style, completion: ((_ didTap: Bool) -> Void)?) {
         do {
@@ -189,7 +189,7 @@ public extension UIView {
      @warning This method has no effect on activity toasts. Use `hideToastActivity` to
      hide activity toasts.
      
-    */
+     */
     func hideToast() {
         guard let activeToast = activeToasts.firstObject as? UIView else { return }
         hideToast(activeToast)
@@ -213,14 +213,14 @@ public extension UIView {
      
      @param includeActivity If `true`, toast activity will also be hidden. Default is `false`.
      @param clearQueue If `true`, removes all toast views from the queue. Default is `true`.
-    */
+     */
     func hideAllToasts(includeActivity: Bool = false, clearQueue: Bool = true) {
         if clearQueue {
             clearToastQueue()
         }
         
         activeToasts.compactMap { $0 as? UIView }
-                    .forEach { hideToast($0) }
+            .forEach { hideToast($0) }
         
         if includeActivity {
             hideToastActivity()
@@ -240,14 +240,14 @@ public extension UIView {
     
     /**
      Creates and displays a new toast activity indicator view at a specified position.
-    
+     
      @warning Only one toast activity indicator view can be presented per superview. Subsequent
      calls to `makeToastActivity(position:)` will be ignored until `hideToastActivity()` is called.
-    
+     
      @warning `makeToastActivity(position:)` works independently of the `showToast` methods. Toast
      activity views can be presented and dismissed while toast views are being displayed.
      `makeToastActivity(position:)` has no effect on the queueing behavior of the `showToast` methods.
-    
+     
      @param position The toast's position
      */
     func makeToastActivity(_ position: ToastPosition) {
@@ -356,10 +356,10 @@ public extension UIView {
         
         activeToasts.add(toast)
         self.addSubview(toast)
-
+        
         let timer = Timer(timeInterval: duration, target: self, selector: #selector(UIView.toastTimerDidFinish(_:)), userInfo: toast, repeats: false)
         objc_setAssociatedObject(toast, &ToastKeys.timer, timer, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-
+        
         UIView.animate(withDuration: ToastManager.shared.style.fadeDuration, delay: 0.0, options: [.curveEaseOut, .allowUserInteraction], animations: {
             toast.alpha = 1.0
         }) { _ in
@@ -413,19 +413,18 @@ public extension UIView {
      The look and feel is configured via the style. Unlike the `makeToast` methods,
      this method does not present the toast view automatically. One of the `showToast`
      methods must be used to present the resulting view.
-    
+     
      @warning if message, title, and image are all nil, this method will throw
      `ToastError.missingParameters`
-    
+     
      @param message The message to be displayed
      @param title The title
      @param image The image
      @param style The style. The shared style will be used when nil
      @throws `ToastError.missingParameters` when message, title, and image are all nil
      @return The newly created toast view
-    */
+     */
     func toastViewForMessage(_ message: String?, title: String?, image: UIImage?, style: ToastStyle) throws -> UIView {
-        // sanity
         guard message != nil || title != nil || image != nil else {
             throw ToastError.missingParameters
         }
@@ -461,17 +460,21 @@ public extension UIView {
             imageRect.size.height = imageView.bounds.size.height
         }
 
+        // 固定文字高度
+           let textHeight: CGFloat = 20
+        
+        // ===== 修改開始：支援多行文字 =====
         if let title = title {
             titleLabel = UILabel()
-            titleLabel?.numberOfLines = style.titleNumberOfLines
-            titleLabel?.font = style.titleFont
+            titleLabel?.numberOfLines = 0  // 改為 0 支援多行
+            titleLabel?.font = UIFont.systemFont(ofSize: 13.0)
             titleLabel?.textAlignment = style.titleAlignment
-            titleLabel?.lineBreakMode = .byTruncatingTail
+            titleLabel?.lineBreakMode = .byWordWrapping  // 使用單詞換行
             titleLabel?.textColor = style.titleColor
             titleLabel?.backgroundColor = UIColor.clear
-            titleLabel?.text = title;
+            titleLabel?.text = title
             
-            let maxTitleSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width, height: self.bounds.size.height * style.maxHeightPercentage)
+            let maxTitleSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width - (style.horizontalPadding * 2), height: CGFloat.greatestFiniteMagnitude)
             let titleSize = titleLabel?.sizeThatFits(maxTitleSize)
             if let titleSize = titleSize {
                 titleLabel?.frame = CGRect(x: 0.0, y: 0.0, width: titleSize.width, height: titleSize.height)
@@ -481,22 +484,21 @@ public extension UIView {
         if let message = message {
             messageLabel = UILabel()
             messageLabel?.text = message
-            messageLabel?.numberOfLines = style.messageNumberOfLines
-            messageLabel?.font = style.messageFont
+            messageLabel?.numberOfLines = 0  // 改為 0 支援多行
+            messageLabel?.font = UIFont.systemFont(ofSize: 13.0)
             messageLabel?.textAlignment = style.messageAlignment
-            messageLabel?.lineBreakMode = .byTruncatingTail;
+            messageLabel?.lineBreakMode = .byWordWrapping  // 使用單詞換行
             messageLabel?.textColor = style.messageColor
             messageLabel?.backgroundColor = UIColor.clear
             
-            let maxMessageSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width, height: self.bounds.size.height * style.maxHeightPercentage)
+            let maxMessageSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width - (style.horizontalPadding * 2), height: CGFloat.greatestFiniteMagnitude)
             let messageSize = messageLabel?.sizeThatFits(maxMessageSize)
             if let messageSize = messageSize {
-                let actualWidth = min(messageSize.width, maxMessageSize.width)
-                let actualHeight = min(messageSize.height, maxMessageSize.height)
-                messageLabel?.frame = CGRect(x: 0.0, y: 0.0, width: actualWidth, height: actualHeight)
+                messageLabel?.frame = CGRect(x: 0.0, y: 0.0, width: messageSize.width, height: messageSize.height)
             }
         }
-  
+        // ===== 修改結束 =====
+
         var titleRect = CGRect.zero
         
         if let titleLabel = titleLabel {
@@ -542,7 +544,6 @@ public extension UIView {
         
         return wrapperView
     }
-    
 }
 
 // MARK: - Toast Style
@@ -551,35 +552,35 @@ public extension UIView {
  `ToastStyle` instances define the look and feel for toast views created via the
  `makeToast` methods as well for toast views created directly with
  `toastViewForMessage(message:title:image:style:)`.
-
+ 
  @warning `ToastStyle` offers relatively simple styling options for the default
  toast view. If you require a toast view with more complex UI, it probably makes more
  sense to create your own custom UIView subclass and present it with the `showToast`
  methods.
-*/
+ */
 public struct ToastStyle {
-
+    
     public init() {}
     
     /**
-     The background color. Default is `.black` at 80% opacity.
-    */
-    public var backgroundColor: UIColor = UIColor.black.withAlphaComponent(0.8)
+     The background color. Default is `#233440` at 80% opacity.
+     */
+    public var backgroundColor: UIColor = UIColor(red: 36/255, green: 52/255, blue: 64/255, alpha: 0.8)
     
     /**
      The title color. Default is `UIColor.whiteColor()`.
-    */
+     */
     public var titleColor: UIColor = .white
     
     /**
      The message color. Default is `.white`.
-    */
+     */
     public var messageColor: UIColor = .white
     
     /**
      A percentage value from 0.0 to 1.0, representing the maximum width of the toast
      view relative to it's superview. Default is 0.8 (80% of the superview's width).
-    */
+     */
     public var maxWidthPercentage: CGFloat = 0.8 {
         didSet {
             maxWidthPercentage = max(min(maxWidthPercentage, 1.0), 0.0)
@@ -589,7 +590,7 @@ public struct ToastStyle {
     /**
      A percentage value from 0.0 to 1.0, representing the maximum height of the toast
      view relative to it's superview. Default is 0.8 (80% of the superview's height).
-    */
+     */
     public var maxHeightPercentage: CGFloat = 0.8 {
         didSet {
             maxHeightPercentage = max(min(maxHeightPercentage, 1.0), 0.0)
@@ -601,7 +602,7 @@ public struct ToastStyle {
      is present, this is also used as the padding between the image and the text.
      Default is 10.0.
      
-    */
+     */
     public var horizontalPadding: CGFloat = 10.0
     
     /**
@@ -609,47 +610,47 @@ public struct ToastStyle {
      is present, this is also used as the padding between the title and the message.
      Default is 10.0. On iOS11+, this value is added added to the `safeAreaInset.top`
      and `safeAreaInsets.bottom`.
-    */
+     */
     public var verticalPadding: CGFloat = 10.0
     
     /**
      The corner radius. Default is 10.0.
-    */
+     */
     public var cornerRadius: CGFloat = 10.0;
     
     /**
-     The title font. Default is `.boldSystemFont(16.0)`.
-    */
-    public var titleFont: UIFont = .boldSystemFont(ofSize: 16.0)
+     The title font. Default is `.boldSystemFont(13.0)`.
+     */
+    public var titleFont: UIFont = .boldSystemFont(ofSize: 13.0)
     
     /**
-     The message font. Default is `.systemFont(ofSize: 16.0)`.
-    */
-    public var messageFont: UIFont = .systemFont(ofSize: 16.0)
+     The message font. Default is `.systemFont(ofSize: 13.0)`.
+     */
+    public var messageFont: UIFont = .systemFont(ofSize: 13.0)
     
     /**
      The title text alignment. Default is `NSTextAlignment.Left`.
-    */
+     */
     public var titleAlignment: NSTextAlignment = .left
     
     /**
      The message text alignment. Default is `NSTextAlignment.Left`.
-    */
+     */
     public var messageAlignment: NSTextAlignment = .left
     
     /**
      The maximum number of lines for the title. The default is 0 (no limit).
-    */
+     */
     public var titleNumberOfLines = 0
     
     /**
      The maximum number of lines for the message. The default is 0 (no limit).
-    */
+     */
     public var messageNumberOfLines = 0
     
     /**
      Enable or disable a shadow on the toast view. Default is `false`.
-    */
+     */
     public var displayShadow = false
     
     /**
@@ -660,32 +661,32 @@ public struct ToastStyle {
     /**
      A value from 0.0 to 1.0, representing the opacity of the shadow.
      Default is 0.8 (80% opacity).
-    */
+     */
     public var shadowOpacity: Float = 0.8 {
         didSet {
             shadowOpacity = max(min(shadowOpacity, 1.0), 0.0)
         }
     }
-
+    
     /**
      The shadow radius. Default is 6.0.
-    */
+     */
     public var shadowRadius: CGFloat = 6.0
     
     /**
      The shadow offset. The default is 4 x 4.
-    */
+     */
     public var shadowOffset = CGSize(width: 4.0, height: 4.0)
     
     /**
      The image size. The default is 80 x 80.
-    */
+     */
     public var imageSize = CGSize(width: 80.0, height: 80.0)
     
     /**
      The size of the toast activity view when `makeToastActivity(position:)` is called.
      Default is 100 x 100.
-    */
+     */
     public var activitySize = CGSize(width: 100.0, height: 100.0)
     
     /**
@@ -710,7 +711,7 @@ public struct ToastStyle {
 /**
  `ToastManager` provides general configuration options for all toast
  notifications. Backed by a singleton instance.
-*/
+ */
 public class ToastManager {
     
     /**
@@ -794,4 +795,412 @@ private extension UIView {
         }
     }
     
+}
+
+// 在你 Fork 的 Toast.swift 檔案中
+// 找到 extension UIView 的 stackable toast 部分,替換成以下程式碼:
+
+extension UIView {
+    
+    private static var stackableToastKey: UInt8 = 0
+    private static var stackableToastSpacing: CGFloat = 8.0
+    
+    /// 儲存目前顯示的疊加 toasts
+    private var stackableToasts: [UIView] {
+        get {
+            return objc_getAssociatedObject(self, &UIView.stackableToastKey) as? [UIView] ?? []
+        }
+        set {
+            objc_setAssociatedObject(self, &UIView.stackableToastKey, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+    }
+    
+    /**
+     顯示可疊加的 Toast,多個 Toast 會往上堆疊
+     
+     @param message Toast 訊息文字
+     @param duration Toast 顯示時長 (預設使用 ToastManager.shared.duration)
+     @param position Toast 位置 (預設使用 ToastManager.shared.position)
+     @param title 可選的標題文字
+     @param image 可選的圖片
+     @param style Toast 樣式 (預設使用 ToastManager.shared.style)
+     @param completion 完成後的回調
+     */
+    public func makeStackableToast(_ message: String?,
+                                   duration: TimeInterval = ToastManager.shared.duration,
+                                   position: ToastPosition = ToastManager.shared.position,
+                                   title: String? = nil,
+                                   image: UIImage? = nil,
+                                   style: ToastStyle = ToastManager.shared.style,
+                                   completion: ((_ didTap: Bool) -> Void)? = nil) {
+        
+        // 使用原本的方法建立 toast view
+        guard let toast = try? toastViewForMessage(message,
+                                                   title: title,
+                                                   image: image,
+                                                   style: style) else {
+            return
+        }
+        
+        // 先計算偏移(在添加到列表之前)
+        let offset = calculateStackableOffset()
+        
+        // 添加到疊加列表
+        stackableToasts.append(toast)
+        
+        // 顯示 toast
+        showStackableToast(toast,
+                           duration: duration,
+                           position: position,
+                           offset: offset,
+                           completion: completion)
+    }
+    
+    /**
+     顯示帶按鈕的疊加 Toast
+     
+     @param message Toast 訊息文字
+     @param buttonTitle 按鈕文字
+     @param duration 顯示時長
+     @param position 位置
+     @param buttonAction 按鈕點擊回調
+     */
+    public func makeStackableToastWithButton(
+        _ message: String,
+        buttonTitle: String = "按鈕",
+        duration: TimeInterval = ToastManager.shared.duration,
+        position: ToastPosition = ToastManager.shared.position,
+        buttonAction: (() -> Void)? = nil
+    ) {
+        // 建立自訂 Toast View
+        let toastView = createToastViewWithButton(
+            message: message,
+            buttonTitle: buttonTitle,
+            buttonAction: buttonAction
+        )
+        
+        // 計算偏移
+        let offset = calculateStackableOffset()
+        
+        // 添加到列表
+        stackableToasts.append(toastView)
+        
+        // 顯示
+        showStackableToast(toastView,
+                           duration: duration,
+                           position: position,
+                           offset: offset,
+                           completion: nil)
+    }
+    
+    // MARK: - Private Helper
+    
+    private func createToastViewWithButton(
+        message: String,
+        buttonTitle: String,
+        buttonAction: (() -> Void)?
+    ) -> UIView {
+        
+        let style = ToastManager.shared.style
+        
+        // 容器 View
+        let containerView = UIView()
+        containerView.backgroundColor = style.backgroundColor
+        containerView.layer.cornerRadius = style.cornerRadius
+        containerView.clipsToBounds = true
+        
+        if style.displayShadow {
+            containerView.layer.shadowColor = style.shadowColor.cgColor
+            containerView.layer.shadowOpacity = style.shadowOpacity
+            containerView.layer.shadowRadius = style.shadowRadius
+            containerView.layer.shadowOffset = style.shadowOffset
+        }
+        
+        // ===== 修改：固定佈局，文字最大 263，按鈕固定右側 =====
+        
+        // 訊息 Label
+        let messageLabel = UILabel()
+        messageLabel.text = message
+        messageLabel.textColor = style.messageColor
+        messageLabel.font = UIFont.systemFont(ofSize: 13.0)
+        messageLabel.numberOfLines = 0  // 支援多行
+        messageLabel.lineBreakMode = .byWordWrapping
+        messageLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        // 按鈕
+        let button = UIButton(type: .system)
+        button.setTitle(buttonTitle, for: .normal)
+        button.setTitleColor(UIColor(red: 1.0, green: 0.71, blue: 0.31, alpha: 1.0), for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 13.0, weight: .medium)
+        button.backgroundColor = .clear
+        button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentHuggingPriority(.required, for: .horizontal)  // 按鈕不壓縮
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)  // 按鈕不被擠壓
+        
+        // 儲存 action 到 button
+        if let action = buttonAction {
+            let wrapper = ToastButtonActionWrapper(action: action)
+            objc_setAssociatedObject(button, &ToastButtonKeys.action, wrapper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        }
+        
+        button.addTarget(self, action: #selector(handleToastButtonTapped(_:)), for: .touchUpInside)
+        
+        // 添加到容器
+        containerView.addSubview(messageLabel)
+        containerView.addSubview(button)
+        
+        // 固定參數
+        let maxLabelWidth: CGFloat = 263  // 文字最大寬度
+        let spacing: CGFloat = 12  // 間距
+        
+        // 計算按鈕需要的寬度
+        let buttonSize = button.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        let buttonWidth = buttonSize.width
+        
+        // 計算 label 實際需要的尺寸（最大 263）
+        let labelSize = messageLabel.sizeThatFits(CGSize(width: maxLabelWidth, height: CGFloat.greatestFiniteMagnitude))
+        let actualLabelWidth = min(labelSize.width, maxLabelWidth)
+        
+        // 設定固定文字高度為 20
+        let textHeight: CGFloat = 20
+        
+        // 計算容器總寬度
+        let containerWidth = style.horizontalPadding + actualLabelWidth + spacing + buttonWidth + style.horizontalPadding
+        let containerHeight = max(labelSize.height + (style.verticalPadding * 2), 44)  // 最小高度 44
+        
+        containerView.frame = CGRect(x: 0, y: 0, width: containerWidth, height: containerHeight)
+        
+        // 設定約束
+        NSLayoutConstraint.activate([
+            // Message Label - 固定在左側，最大寬度 263
+            messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: style.horizontalPadding),
+            messageLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: style.verticalPadding),
+            messageLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -style.verticalPadding),
+            messageLabel.widthAnchor.constraint(lessThanOrEqualToConstant: maxLabelWidth),
+            
+            // Button - 固定在右側，垂直置中
+            button.leadingAnchor.constraint(equalTo: messageLabel.trailingAnchor, constant: spacing),
+            button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -style.horizontalPadding),
+            button.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
+        ])
+        
+        return containerView
+    }
+    
+    @objc private func handleToastButtonTapped(_ button: UIButton) {
+        if let wrapper = objc_getAssociatedObject(button, &ToastButtonKeys.action) as? ToastButtonActionWrapper {
+            wrapper.action()
+        }
+    }
+    
+    private struct ToastButtonKeys {
+        static var action = malloc(1)
+    }
+    
+    private class ToastButtonActionWrapper {
+        let action: () -> Void
+        
+        init(action: @escaping () -> Void) {
+            self.action = action
+        }
+    }
+    /**
+     顯示可疊加的 Toast (使用自訂 view)
+     
+     @param toast 自訂的 Toast view
+     @param duration 顯示時長
+     @param position 位置
+     @param completion 完成回調
+     */
+    public func showStackableToast(_ toast: UIView,
+                                   duration: TimeInterval = ToastManager.shared.duration,
+                                   position: ToastPosition = ToastManager.shared.position,
+                                   completion: ((_ didTap: Bool) -> Void)? = nil) {
+        
+        // 先計算偏移
+        let offset = calculateStackableOffset()
+        
+        // 如果不在列表中才添加
+        if !stackableToasts.contains(toast) {
+            stackableToasts.append(toast)
+        }
+        
+        showStackableToast(toast,
+                           duration: duration,
+                           position: position,
+                           offset: offset,
+                           completion: completion)
+    }
+    
+    /**
+     清除所有疊加的 Toasts
+     */
+    public func hideAllStackableToasts() {
+        for toast in stackableToasts {
+            // 取消 timer
+            if let timer = objc_getAssociatedObject(toast, &ToastKeys.timer) as? Timer {
+                timer.invalidate()
+            }
+            
+            UIView.animate(withDuration: 0.2, animations: {
+                toast.alpha = 0.0
+            }) { _ in
+                toast.removeFromSuperview()
+            }
+        }
+        stackableToasts.removeAll()
+    }
+    
+    // MARK: - Private Methods
+    
+    private func calculateStackableOffset() -> CGFloat {
+        var offset: CGFloat = 0
+        for toast in stackableToasts {
+            offset += toast.frame.height + UIView.stackableToastSpacing
+        }
+        return offset
+    }
+    
+    private func showStackableToast(_ toast: UIView,
+                                    duration: TimeInterval,
+                                    position: ToastPosition,
+                                    offset: CGFloat,
+                                    completion: ((_ didTap: Bool) -> Void)?) {
+        
+        // 先添加到 superview 以便計算 frame
+        addSubview(toast)
+        
+        // 強制布局以獲得正確的 frame size
+        toast.setNeedsLayout()
+        toast.layoutIfNeeded()
+        
+        // 設定初始透明度
+        toast.alpha = 0.0
+        
+        // 計算位置 (使用已經計算好的 offset)
+        let point = position.centerPoint(forToast: toast, inSuperview: self, offset: offset)
+        toast.center = point
+        
+        // 淡入動畫
+        UIView.animate(withDuration: ToastManager.shared.style.fadeDuration,
+                       delay: 0.0,
+                       options: [.curveEaseOut, .allowUserInteraction],
+                       animations: {
+            toast.alpha = 1.0
+        })
+        
+        // 設定自動隱藏
+        let timer = Timer(timeInterval: duration,
+                          target: self,
+                          selector: #selector(hideStackableToast(_:)),
+                          userInfo: ["toast": toast, "completion": completion as Any],
+                          repeats: false)
+        RunLoop.main.add(timer, forMode: .common)
+        objc_setAssociatedObject(toast, &ToastKeys.timer, timer, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        
+        // 點擊手勢
+        if ToastManager.shared.isTapToDismissEnabled {
+            let recognizer = UITapGestureRecognizer(target: self, action: #selector(handleStackableToastTapped(_:)))
+            toast.addGestureRecognizer(recognizer)
+            toast.isUserInteractionEnabled = true
+            toast.isExclusiveTouch = true
+        }
+    }
+    
+    @objc private func hideStackableToast(_ timer: Timer) {
+        guard let userInfo = timer.userInfo as? [String: Any],
+              let toast = userInfo["toast"] as? UIView else {
+            return
+        }
+        
+        let completion = userInfo["completion"] as? ((Bool) -> Void)
+        hideStackableToast(toast, fromTap: false, completion: completion)
+    }
+    
+    private func hideStackableToast(_ toast: UIView,
+                                    fromTap: Bool,
+                                    completion: ((_ didTap: Bool) -> Void)?) {
+        
+        // 取消 timer
+        if let timer = objc_getAssociatedObject(toast, &ToastKeys.timer) as? Timer {
+            timer.invalidate()
+        }
+        
+        // 淡出動畫
+        UIView.animate(withDuration: ToastManager.shared.style.fadeDuration,
+                       delay: 0.0,
+                       options: [.curveEaseIn, .beginFromCurrentState],
+                       animations: {
+            toast.alpha = 0.0
+        }) { _ in
+            toast.removeFromSuperview()
+            
+            // 從列表移除
+            if let index = self.stackableToasts.firstIndex(of: toast) {
+                self.stackableToasts.remove(at: index)
+            }
+            
+            // 重新排列剩餘的 toasts
+            self.rearrangeStackableToasts()
+            
+            // 執行完成回調
+            completion?(fromTap)
+        }
+    }
+    
+    @objc private func handleStackableToastTapped(_ recognizer: UITapGestureRecognizer) {
+        guard let toast = recognizer.view else { return }
+        
+        // 取得 completion
+        if let timer = objc_getAssociatedObject(toast, &ToastKeys.timer) as? Timer,
+           let userInfo = timer.userInfo as? [String: Any],
+           let completion = userInfo["completion"] as? ((Bool) -> Void) {
+            hideStackableToast(toast, fromTap: true, completion: completion)
+        } else {
+            hideStackableToast(toast, fromTap: true, completion: nil)
+        }
+    }
+    
+    private func rearrangeStackableToasts() {
+        guard !stackableToasts.isEmpty else { return }
+        
+        UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseOut, animations: {
+            var offset: CGFloat = 0
+            let position = ToastManager.shared.position
+            
+            // 重新計算每個 toast 的位置
+            for toast in self.stackableToasts {
+                let point = position.centerPoint(forToast: toast, inSuperview: self, offset: offset)
+                toast.center = point
+                
+                // 累加偏移量
+                offset += toast.frame.height + UIView.stackableToastSpacing
+            }
+        })
+    }
+}
+
+// MARK: - ToastPosition Extension
+extension ToastPosition {
+    
+    func centerPoint(forToast toast: UIView, inSuperview superview: UIView, offset: CGFloat) -> CGPoint {
+        let topPadding: CGFloat = ToastManager.shared.style.verticalPadding + superview.csSafeAreaInsets.top
+        let bottomPadding: CGFloat = ToastManager.shared.style.verticalPadding + superview.csSafeAreaInsets.bottom
+        
+        switch self {
+        case .top:
+            // Top position: 新的 toast 在上方 (offset 往下推)
+            return CGPoint(x: superview.bounds.size.width / 2.0,
+                           y: (toast.frame.size.height / 2.0) + topPadding + offset)
+        case .center:
+            // Center position: 新的 toast 往上推
+            return CGPoint(x: superview.bounds.size.width / 2.0,
+                           y: (superview.bounds.size.height / 2.0) - offset)
+        case .bottom:
+            // Bottom position: 新的 toast 在上方 (offset 往上推)
+            return CGPoint(x: superview.bounds.size.width / 2.0,
+                           y: (superview.bounds.size.height - (toast.frame.size.height / 2.0)) - bottomPadding - offset)
+        }
+    }
 }
