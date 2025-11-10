@@ -375,7 +375,7 @@ public extension UIView {
             timer.invalidate()
         }
         
-        UIView.animate(withDuration: ToastManager.shared.style.fadeDuration, delay: 0.0, options: [.curveEaseIn, .beginFromCurrentState], animations: {
+        UIView.animate(withDuration: 0.3, delay: 0.0, options: [.curveEaseIn, .beginFromCurrentState], animations: {
             toast.alpha = 0.0
         }) { _ in
             toast.removeFromSuperview()
@@ -692,7 +692,7 @@ public struct ToastStyle {
     /**
      The fade in/out animation duration. Default is 0.2.
      */
-    public var fadeDuration: TimeInterval = 0.2
+    public var fadeDuration: TimeInterval = 0.25
     
     /**
      Activity indicator color. Default is `.white`.
@@ -1128,7 +1128,7 @@ extension UIView {
         }
         
         // 淡出動畫
-        UIView.animate(withDuration: ToastManager.shared.style.fadeDuration,
+        UIView.animate(withDuration: 0.3,
                        delay: 0.0,
                        options: [.curveEaseIn, .beginFromCurrentState],
                        animations: {
