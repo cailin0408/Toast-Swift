@@ -467,7 +467,7 @@ public extension UIView {
         if let title = title {
             titleLabel = UILabel()
             titleLabel?.numberOfLines = 0  // 改為 0 支援多行
-            titleLabel?.font = UIFont.systemFont(ofSize: 13.0)
+            titleLabel?.font = style.titleFont
             titleLabel?.textAlignment = style.titleAlignment
             titleLabel?.lineBreakMode = .byWordWrapping  // 使用單詞換行
             titleLabel?.textColor = style.titleColor
@@ -475,7 +475,13 @@ public extension UIView {
             titleLabel?.text = title
             
             let maxTitleSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width - (style.horizontalPadding * 2), height: CGFloat.greatestFiniteMagnitude)
-            let titleSize = titleLabel?.sizeThatFits(maxTitleSize)
+            var titleSize = titleLabel?.sizeThatFits(maxTitleSize)
+            
+            // 設定最小高度為 22
+            if let size = titleSize, size.height < 22.0 {
+                titleSize = CGSize(width: size.width, height: 22.0)
+            }
+            
             if let titleSize = titleSize {
                 titleLabel?.frame = CGRect(x: 0.0, y: 0.0, width: titleSize.width, height: titleSize.height)
             }
@@ -485,14 +491,20 @@ public extension UIView {
             messageLabel = UILabel()
             messageLabel?.text = message
             messageLabel?.numberOfLines = 0  // 改為 0 支援多行
-            messageLabel?.font = UIFont.systemFont(ofSize: 13.0)
+            messageLabel?.font = style.messageFont
             messageLabel?.textAlignment = style.messageAlignment
             messageLabel?.lineBreakMode = .byWordWrapping  // 使用單詞換行
             messageLabel?.textColor = style.messageColor
             messageLabel?.backgroundColor = UIColor.clear
             
             let maxMessageSize = CGSize(width: (self.bounds.size.width * style.maxWidthPercentage) - imageRect.size.width - (style.horizontalPadding * 2), height: CGFloat.greatestFiniteMagnitude)
-            let messageSize = messageLabel?.sizeThatFits(maxMessageSize)
+            var messageSize = messageLabel?.sizeThatFits(maxMessageSize)
+            
+            // 設定最小高度為 22
+            if let size = messageSize, size.height < 22.0 {
+                messageSize = CGSize(width: size.width, height: 22.0)
+            }
+            
             if let messageSize = messageSize {
                 messageLabel?.frame = CGRect(x: 0.0, y: 0.0, width: messageSize.width, height: messageSize.height)
             }
