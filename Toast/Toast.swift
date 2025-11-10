@@ -603,7 +603,7 @@ public struct ToastStyle {
      Default is 10.0.
      
      */
-    public var horizontalPadding: CGFloat = 10.0
+    public var horizontalPadding: CGFloat = 16.0
     
     /**
      The spacing from the vertical edge of the toast view to the content. When a title
@@ -611,7 +611,7 @@ public struct ToastStyle {
      Default is 10.0. On iOS11+, this value is added added to the `safeAreaInset.top`
      and `safeAreaInsets.bottom`.
      */
-    public var verticalPadding: CGFloat = 10.0
+    public var verticalPadding: CGFloat = 9.0
     
     /**
      The corner radius. Default is 10.0.
@@ -621,12 +621,12 @@ public struct ToastStyle {
     /**
      The title font. Default is `.boldSystemFont(13.0)`.
      */
-    public var titleFont: UIFont = .boldSystemFont(ofSize: 13.0)
+    public var titleFont: UIFont = .PingFangTC_400(size: 13)!
     
     /**
      The message font. Default is `.systemFont(ofSize: 13.0)`.
      */
-    public var messageFont: UIFont = .systemFont(ofSize: 13.0)
+    public var messageFont: UIFont = .PingFangTC_400(size: 13)!
     
     /**
      The title text alignment. Default is `NSTextAlignment.Left`.
@@ -922,7 +922,7 @@ extension UIView {
         let messageLabel = UILabel()
         messageLabel.text = message
         messageLabel.textColor = style.messageColor
-        messageLabel.font = UIFont.systemFont(ofSize: 13.0)
+        messageLabel.font = UIFont.PingFangTC_400(size: 13)!
         messageLabel.numberOfLines = 0  // 支援多行
         messageLabel.lineBreakMode = .byWordWrapping
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -1198,9 +1198,67 @@ extension ToastPosition {
             return CGPoint(x: superview.bounds.size.width / 2.0,
                            y: (superview.bounds.size.height / 2.0) - offset)
         case .bottom:
-            // Bottom position: 新的 toast 在上方 (offset 往上推)
+            // Bottom position: 距離 safeArea 底部 64
+            let customBottomOffset: CGFloat = 64.0  // 新增：自訂距離
             return CGPoint(x: superview.bounds.size.width / 2.0,
-                           y: (superview.bounds.size.height - (toast.frame.size.height / 2.0)) - bottomPadding - offset)
+                           y: (superview.bounds.size.height - superview.csSafeAreaInsets.bottom - customBottomOffset - (toast.frame.size.height / 2.0)) - offset)
         }
+    }
+}
+
+extension UIFont{
+    /** PingFangTC-Light */
+    static func PingFangTC_300(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "PingFangTC-Light", size: size)
+    }
+    
+    /** PingFangTC-Regular */
+    static func PingFangTC_400(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "PingFangTC-Regular", size: size)
+    }
+    
+    /** PingFangTC-Medium */
+    static func PingFangTC_500(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "PingFangTC-Medium", size: size)
+    }
+    
+    /** PingFangTC-Semibold */
+    static func PingFangTC_600(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "PingFangTC-Semibold", size: size)
+    }
+    
+    /** NotoSans-Light */
+    static func NotoSans_300(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSans-Light", size: size)
+    }
+    
+    /** NotoSans-Regular */
+    static func NotoSans_400(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSans-Regular", size: size)
+    }
+    
+    /** NotoSans-Medium */
+    static func NotoSans_500(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSans-Medium", size: size)
+    }
+    
+    /** NotoSans-Light */
+    static func NotoSansJP_300(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSansJP-Light", size: size)
+    }
+    
+    /** NotoSans-Regular */
+    static func NotoSansJP_400(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSansJP-Regular", size: size)
+    }
+    
+    /** NotoSans-Medium */
+    static func NotoSansJP_500(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSansJP-Medium", size: size)
+    }
+    
+    /** NotoSans-Medium */
+    static func NotoSansJP_700(size: CGFloat) -> UIFont?{
+        return UIFont.init(name: "NotoSansJP-Bold", size: size)
     }
 }
