@@ -92,6 +92,11 @@ public extension UIView {
         }
     }
     
+    // 按鈕點擊狀態 key
+     private struct ToastButtonClickKeys {
+         static var isHandled = "toast_button_is_handled"
+     }
+    
     // MARK: - Make Toast Methods
     
     /**
@@ -928,14 +933,12 @@ extension UIView {
             containerView.layer.shadowOffset = style.shadowOffset
         }
         
-        // ===== 修改：固定佈局，文字最大 263，按鈕固定右側 =====
-        
         // 訊息 Label
         let messageLabel = UILabel()
         messageLabel.text = message
         messageLabel.textColor = style.messageColor
         messageLabel.font = UIFont.PingFangTC_400(size: 13)!
-        messageLabel.numberOfLines = 0  // 支援多行
+        messageLabel.numberOfLines = 0
         messageLabel.lineBreakMode = .byWordWrapping
         messageLabel.translatesAutoresizingMaskIntoConstraints = false
         
@@ -947,14 +950,44 @@ extension UIView {
         button.backgroundColor = .clear
         button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setContentHuggingPriority(.required, for: .horizontal)  // 按鈕不壓縮
-        button.setContentCompressionResistancePriority(.required, for: .horizontal)  // 按鈕不被擠壓
+        button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
         
-        // 儲存 action 到 button
+        // ===== 關鍵修改：儲存 action 和 containerView 的引用 =====
         if let action = buttonAction {
-            let wrapper = ToastButtonActionWrapper(action: action)
+            // 包裝 action，加入防重複點擊邏輯
+            let wrappedAction: () -> Void = { [weak containerView, weak button] in
+                // 檢查是否已處理過
+                guard let container = containerView,
+                      let btn = button else { return }
+                
+                // 取得處理狀態
+                let isHandled = objc_getAssociatedObject(btn, ToastButtonClickKeys.isHandled) as? Bool ?? false
+                
+                guard !isHandled else {
+                    print("[Toast] 按鈕已處理過，忽略重複點擊")
+                    return
+                }
+                
+                // 標記為已處理
+                objc_setAssociatedObject(btn, ToastButtonClickKeys.isHandled, true, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                
+                // 禁用按鈕
+                btn.isEnabled = false
+                
+                // 執行原始回調
+                action()
+                
+                // 立即隱藏 Toast
+                self.hideStackableToastImmediately(container)
+            }
+            
+            let wrapper = ToastButtonActionWrapper(action: wrappedAction)
             objc_setAssociatedObject(button, &ToastButtonKeys.action, wrapper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
+        
+        // 初始化按鈕點擊狀態為 false
+        objc_setAssociatedObject(button, ToastButtonClickKeys.isHandled, false, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         
         button.addTarget(self, action: #selector(handleToastButtonTapped(_:)), for: .touchUpInside)
         
@@ -963,41 +996,59 @@ extension UIView {
         containerView.addSubview(button)
         
         // 固定參數
-        let maxLabelWidth: CGFloat = 263  // 文字最大寬度
-        let spacing: CGFloat = 12  // 間距
+        let maxLabelWidth: CGFloat = 263
+        let spacing: CGFloat = 12
         
         // 計算按鈕需要的寬度
         let buttonSize = button.sizeThatFits(CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
         let buttonWidth = buttonSize.width
         
-        // 計算 label 實際需要的尺寸（最大 263）
+        // 計算 label 實際需要的尺寸
         let labelSize = messageLabel.sizeThatFits(CGSize(width: maxLabelWidth, height: CGFloat.greatestFiniteMagnitude))
         let actualLabelWidth = min(labelSize.width, maxLabelWidth)
         
-        // 設定固定文字高度為 20
-        let textHeight: CGFloat = 20
-        
         // 計算容器總寬度
         let containerWidth = style.horizontalPadding + actualLabelWidth + spacing + buttonWidth + style.horizontalPadding
-        let containerHeight = max(labelSize.height + (style.verticalPadding * 2), 44)  // 最小高度 44
+        let containerHeight = max(labelSize.height + (style.verticalPadding * 2), 44)
         
         containerView.frame = CGRect(x: 0, y: 0, width: containerWidth, height: containerHeight)
         
         // 設定約束
         NSLayoutConstraint.activate([
-            // Message Label - 固定在左側，最大寬度 263
             messageLabel.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: style.horizontalPadding),
             messageLabel.topAnchor.constraint(equalTo: containerView.topAnchor, constant: style.verticalPadding),
             messageLabel.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: -style.verticalPadding),
             messageLabel.widthAnchor.constraint(lessThanOrEqualToConstant: maxLabelWidth),
             
-            // Button - 固定在右側，垂直置中
             button.leadingAnchor.constraint(equalTo: messageLabel.trailingAnchor, constant: spacing),
             button.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -style.horizontalPadding),
             button.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
         
         return containerView
+    }
+    
+    // 立即隱藏 Toast 的方法
+    private func hideStackableToastImmediately(_ toast: UIView) {
+        // 取消 timer
+        if let timer = objc_getAssociatedObject(toast, &ToastKeys.timer) as? Timer {
+            timer.invalidate()
+        }
+        
+        UIView.animate(withDuration: 0.25,
+                       delay: 0.0,
+                       options: [.curveEaseIn, .beginFromCurrentState],
+                       animations: {
+            toast.alpha = 0.0
+        }) { _ in
+            toast.removeFromSuperview()
+            
+            if let index = self.stackableToasts.firstIndex(of: toast) {
+                self.stackableToasts.remove(at: index)
+            }
+            
+            self.rearrangeStackableToasts()
+        }
     }
     
     @objc private func handleToastButtonTapped(_ button: UIButton) {
